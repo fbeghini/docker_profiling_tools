@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 MAINTAINER Stefan Janssen, stefan.m.janssen@gmail.com
 ENV TOOLNAME metaphlan2 
 
@@ -35,7 +35,7 @@ RUN wget \
       --strip-components=1
 ENV PATH ${PATH}:${VALIDATOR}
 #download yaml schema
-RUN wget -q -O ${PREFIX}/share/schema.yaml https://raw.githubusercontent.com/pbelmann/rfc/feature/new-profiling-inteface/container/profiling/schema.yaml
+RUN wget -q -O ${PREFIX}/share/schema.yaml https://raw.githubusercontent.com/bioboxes/rfc/master/container/profiling/schema.yaml
 
 #download the latest version of MetaPhlAn2
 RUN wget -q -O ${PREFIX}/src/${TOOLNAME}.zip https://www.dropbox.com/s/ztqr8qgbo727zpn/metaphlan2.zip?dl=0
@@ -63,6 +63,7 @@ ADD workdir/Assembly_result.xml workdir/bioproject_result.xml workdir/manual.txt
 
 #run the one time mapping from "species2genomes.txt" into NCBI taxids and store the result in $MAPPERRESULT
 #since the NCBI taxonomy is not static, it might happen that some taxids are no longer used, i.e. the following program crashes. Try to manually update the XML files via the NCBI batch entrez system.
+ADD species2genomes.txt ${PREFIX}/src/${TOOLNAME}/utils/
 RUN perl -I ${PREFIX}/lib/ ${PREFIX}/bin/${MAPPERNAME}.pl ${PREFIX}/src/${TOOLNAME}/utils/species2genomes.txt ${PREFIX}/share/${MAPPERNAME}/workdir > ${MAPPERRESULT} 
 #should the previous command be successful, temporary files in workdir/Downloads can be deleted
 RUN rm -rf ${PREFIX}/share/${MAPPERNAME}/workdir

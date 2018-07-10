@@ -1,0 +1,72 @@
+FROM ubuntu:16.04
+MAINTAINER Stefan Janssen, stefan.m.janssen@gmail.com
+ENV TOOLNAME metaphlan2 
+
+#needed if on Michaels cluster
+#~ ENV http_proxy http://172.16.20.249:3128
+#~ ENV https_proxy http://172.16.20.249:3128
+
+#update underlying linux system
+RUN apt-get update -y
+
+#list of all dependencies that can be satisfied via the package management system of Ubuntu
+ENV PACKAGES python-numpy python-biom-format bowtie2 libxml-xpath-perl wget unzip make xz-utils ca-certificates
+#install dependencies
+RUN apt-get install -y --no-install-recommends ${PACKAGES}
+
+#directory where additional software shall be installed
+ENV PREFIX /biobox/
+#create prefix directory and src subdirectory
+RUN mkdir -p ${PREFIX}/src/ ${PREFIX}/bin/ ${PREFIX}/lib/ ${PREFIX}/share/ 
+ENV PATH=${PREFIX}/bin:${PATH}
+
+# Locations for biobox file validator
+ENV VALIDATOR /bbx/validator/
+ENV BASE_URL https://s3-us-west-1.amazonaws.com/bioboxes-tools/validate-biobox-file
+ENV VERSION  0.x.y
+RUN mkdir -p ${VALIDATOR}
+# download the validate-biobox-file binary and extract it to the directory $VALIDATOR
+RUN wget \
+      --quiet \
+      --output-document -\
+      ${BASE_URL}/${VERSION}/validate-biobox-file.tar.xz \
+    | tar xJf - \
+      --directory ${VALIDATOR} \
+      --strip-components=1
+ENV PATH ${PATH}:${VALIDATOR}
+#download yaml schema
+RUN wget -q -O ${PREFIX}/share/schema.yaml https://raw.githubusercontent.com/bioboxes/rfc/master/container/profiling/schema.yaml
+
+#download the latest version of MetaPhlAn2
+RUN wget -q -O ${PREFIX}/src/${TOOLNAME}.zip https://www.dropbox.com/s/ztqr8qgbo727zpn/metaphlan2.zip?dl=0
+RUN unzip -d ${PREFIX}/src/ ${PREFIX}/src/${TOOLNAME}.zip
+RUN rm -f ${PREFIX}/src/${TOOLNAME}.zip
+
+ENV GITHUB https://raw.githubusercontent.com/CAMI-challenge/docker_profiling_tools/master/
+#download the NCBI taxonomy from NCBI's FTP server
+RUN wget -q -O ${PREFIX}/bin/downloadTaxonomy.pl ${GITHUB}/downloadTaxonomy.pl
+RUN chmod a+x ${PREFIX}/bin/downloadTaxonomy.pl
+RUN downloadTaxonomy.pl ${PREFIX}/share/taxonomy/
+
+#add my Perl scripts
+RUN wget -q -O ${PREFIX}/lib/Utils.pm ${GITHUB}/Utils.pm
+RUN wget -q -O ${PREFIX}/lib/YAMLsj.pm ${GITHUB}/YAMLsj.pm
+ADD convert_${TOOLNAME}.pl ${PREFIX}/bin/convert.pl
+ADD task_${TOOLNAME}.pl ${PREFIX}/bin/task.pl
+RUN chmod a+x ${PREFIX}/bin/task.pl ${PREFIX}/bin/convert.pl 
+
+#metaphlan uses the GreenGenes taxonomy, while CAMI uses NCBI taxonomy. We thus need to find a mapping from GreenGenes to NCBI. I do this in a two step fashion: first, all used genomes (found in the "species2genomes.txt" file) are resolved to their according NCBI taxid with a Perl programm that must be run once. Second, every output of metaphlan must be converted via a second Perl script, which uses the mapping results from stage one.
+ENV MAPPERNAME IDmapper
+ENV MAPPERRESULT ${PREFIX}/share/${MAPPERNAME}/mappingresults.txt
+ADD buildIDlists.pl ${PREFIX}/bin/${MAPPERNAME}.pl
+ADD workdir/Assembly_result.xml workdir/bioproject_result.xml workdir/manual.txt ${PREFIX}/share/${MAPPERNAME}/workdir/
+
+#run the one time mapping from "species2genomes.txt" into NCBI taxids and store the result in $MAPPERRESULT
+#since the NCBI taxonomy is not static, it might happen that some taxids are no longer used, i.e. the following program crashes. Try to manually update the XML files via the NCBI batch entrez system.
+ADD species2genomes.txt ${PREFIX}/src/${TOOLNAME}/utils/
+RUN perl -I ${PREFIX}/lib/ ${PREFIX}/bin/${MAPPERNAME}.pl ${PREFIX}/src/${TOOLNAME}/utils/species2genomes.txt ${PREFIX}/share/${MAPPERNAME}/workdir > ${MAPPERRESULT} 
+#should the previous command be successful, temporary files in workdir/Downloads can be deleted
+RUN rm -rf ${PREFIX}/share/${MAPPERNAME}/workdir
+
+ENV YAML "/bbx/mnt/input/biobox.yaml"
+ENTRYPOINT ["task.pl"]
