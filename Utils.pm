@@ -383,7 +383,7 @@ sub collectYAMLtasks {
 	my @tasks = ();
 	
 	my $cache = "/tmp";
-	$cache = $yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#value'} if ($yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#value'} ne '');
+	$cache = $yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#children'}->{value}>{'#value'} if ($yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#children'}->{value}>{'#value'} ne '');
 	$cache = absFilename($cache);
 	die "cache '$cache' is not a writable directory.\n" if ((not -d $cache) || (not -w $cache));
 
@@ -396,7 +396,7 @@ sub collectYAMLtasks {
 			$taxDir = $ENV{HOME}."/share/phylosift/ncbi/";
 		}
 	}
-	$taxDir = $yaml->[0]->{arguments}->{'#children'}->[0]->{databases}->{'#children'}->[0]->{taxonomy}->{'#children'}->[0]->{path}->{'#value'} if ($yaml->[0]->{arguments}->{'#children'}->[0]->{databases}->{'#children'}->[0]->{taxonomy}->{'#children'}->[0]->{path}->{'#value'} ne '' && -d $yaml->[0]->{arguments}->{'#children'}->[0]->{databases}->{'#children'}->[0]->{taxonomy}->{'#children'}->[0]->{path}->{'#value'});
+	$taxDir = $yaml->[0]->{arguments}->{'#children'}->[0]->{database}->{'#children'}->[0]->{value}->{'#value'} if ($yaml->[0]->{arguments}->{'#children'}->[0]->{database}->{'#children'}->[0]->{value}->{'#value'} ne '' && -d $yaml->[0]->{arguments}->{'#children'}->[0]->{database}->{'#children'}->[0]->{value}->{'#value'});
 	my @missingTaxFiles = ();
 	push @missingTaxFiles, "nodes.dmp" if (not -e $taxDir."/nodes.dmp");
 	push @missingTaxFiles, "names.dmp" if (not -e $taxDir."/names.dmp");
@@ -404,22 +404,22 @@ sub collectYAMLtasks {
 	die "cannot find file(s) '".join("', '", @missingTaxFiles)."' in taxonomy directory '".$taxDir."'.\n" if ((@missingTaxFiles > 0) && (not $omitTaxonomyCheck));
 	
 	my $taskID = 0;
-	foreach my $listing (@{$yaml->[0]->{arguments}->{'#children'}->[0]->{reads}->{'#children'}}) {
+	foreach my $listing (@{$yaml->[0]->{arguments}->{'#children'}->[0]->{fastq}->{'#children'}->[0]}) {
 		$taskID++;
-		my $basename = $listing->{path}->{'#value'};
+		my $basename = $listing->{value}->{'#value'};
 		$basename = qx(basename $basename); chomp $basename;
-		if (not -e $listing->{path}->{'#value'}) {
-			print STDERR "cannot read input file '".$listing->{path}->{'#value'}."'.\n";
+		if (not -e $listing->{value}->{'#value'}) {
+			print STDERR "cannot read input file '".$listing->{value}->{'#value'}."'.\n";
 		} else {
 			if (-d $outputDirectory && -w $outputDirectory) {
 				my $dbPath = undef;
-				if (exists $yaml->[0]->{arguments}->{'#children'}->[0]->{databases}->{'#children'}->[0]->{$ENV{TOOLNAME}}) {
-					$dbPath = absFilename($yaml->[0]->{arguments}->{'#children'}->[0]->{databases}->{'#children'}->[0]->{$ENV{TOOLNAME}}->{'#children'}->[0]->{path}->{'#value'})."/";
+				if (exists $yaml->[0]->{arguments}->{'#children'}->[0]->{database}->{'#children'}->[0]->{$ENV{TOOLNAME}}) {
+					$dbPath = absFilename($yaml->[0]->{arguments}->{'#children'}->[0]->{database}->{'#children'}->[0]->{$ENV{TOOLNAME}}->{'#children'}->[0]->{value}->{'#value'})."/";
 					$dbPath = undef if ($dbPath eq '');
 					die "I expect the '".$ENV{TOOLNAME}."' database to be mounted at '$dbPath', but I cannot find this directory.\n"  if (! -d $dbPath);
 				}
 				push @tasks, {
-					inputfile => $listing->{path}->{'#value'}, 
+					inputfile => $listing->{value}->{'#value'}, 
 					resultfilename => $outputDirectory."/result_".$taskID."__".$basename,
 					cacheDir => $cache,
 					taxonomyDir => $taxDir,
