@@ -10,7 +10,7 @@ ENV TOOLNAME metaphlan2
 RUN apt-get update -y
 
 #list of all dependencies that can be satisfied via the package management system of Ubuntu
-ENV PACKAGES python-numpy python-biom-format bowtie2 libxml-xpath-perl wget unzip make xz-utils ca-certificates
+ENV PACKAGES python-numpy python-biom-format bowtie2 libxml-xpath-perl wget unzip make xz-utils ca-certificates vim
 #install dependencies
 RUN apt-get install -y --no-install-recommends ${PACKAGES}
 
@@ -42,7 +42,7 @@ RUN wget -q -O ${PREFIX}/src/${TOOLNAME}.zip https://www.dropbox.com/s/ztqr8qgbo
 RUN unzip -d ${PREFIX}/src/ ${PREFIX}/src/${TOOLNAME}.zip
 RUN rm -f ${PREFIX}/src/${TOOLNAME}.zip
 
-ENV GITHUB https://raw.githubusercontent.com/CAMI-challenge/docker_profiling_tools/master/
+ENV GITHUB https://raw.githubusercontent.com/fbeghini/docker_profiling_tools/master/
 #download the NCBI taxonomy from NCBI's FTP server
 RUN wget -q -O ${PREFIX}/bin/downloadTaxonomy.pl ${GITHUB}/downloadTaxonomy.pl
 RUN chmod a+x ${PREFIX}/bin/downloadTaxonomy.pl

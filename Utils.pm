@@ -383,7 +383,7 @@ sub collectYAMLtasks {
 	my @tasks = ();
 	
 	my $cache = "/tmp";
-	$cache = $yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#children'}->{value}>{'#value'} if ($yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#children'}->{value}>{'#value'} ne '');
+	$cache = $yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#children'}->[0]->{value}->{'#value'} if ($yaml->[0]->{arguments}->{'#children'}->[0]->{cache}->{'#children'}->[0]->{value}->{'#value'} ne '');
 	$cache = absFilename($cache);
 	die "cache '$cache' is not a writable directory.\n" if ((not -d $cache) || (not -w $cache));
 
@@ -404,7 +404,7 @@ sub collectYAMLtasks {
 	die "cannot find file(s) '".join("', '", @missingTaxFiles)."' in taxonomy directory '".$taxDir."'.\n" if ((@missingTaxFiles > 0) && (not $omitTaxonomyCheck));
 	
 	my $taskID = 0;
-	foreach my $listing (@{$yaml->[0]->{arguments}->{'#children'}->[0]->{fastq}->{'#children'}->[0]}) {
+	foreach my $listing (@{$yaml->[0]->{arguments}->{'#children'}->[0]->{fastq}->{'#children'}}) {
 		$taskID++;
 		my $basename = $listing->{value}->{'#value'};
 		$basename = qx(basename $basename); chomp $basename;
