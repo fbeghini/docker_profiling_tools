@@ -35,7 +35,7 @@ RUN wget \
       --strip-components=1
 ENV PATH ${PATH}:${VALIDATOR}
 #download yaml schema
-RUN wget -q -O ${PREFIX}/share/schema.yaml https://raw.githubusercontent.com/pbelmann/rfc/feature/new-profiling-inteface/container/profiling/schema.yaml
+RUN wget -q -O ${PREFIX}/share/schema.yaml https://raw.githubusercontent.com/bioboxes/rfc/master/container/profiling/schema.yaml
 
 
 
@@ -48,7 +48,7 @@ RUN rm -f ${PREFIX}/src/${TOOLNAME}.tar.gz
 
 
 
-ENV GITHUB https://raw.githubusercontent.com/CAMI-challenge/docker_profiling_tools/master/
+ENV GITHUB https://raw.githubusercontent.com/fbeghini/docker_profiling_tools/master/
 #download the NCBI taxonomy from NCBI's FTP server
 RUN wget -q -O ${PREFIX}/bin/downloadTaxonomy.pl ${GITHUB}/downloadTaxonomy.pl
 RUN chmod a+x ${PREFIX}/bin/downloadTaxonomy.pl
